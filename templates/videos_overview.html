@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Channel Videos Overview</title>
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f9;
+        color: #333;
+      }
+
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 40px;
+        font-size: 2.5rem;
+      }
+
+      .video-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .video-card {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        align-items: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .video-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+      }
+
+      .video-thumbnail {
+        width: 160px;
+        height: auto;
+        border-radius: 8px;
+        margin-right: 25px;
+        transition: opacity 0.3s ease;
+      }
+
+      .video-card:hover .video-thumbnail {
+        opacity: 0.9;
+      }
+
+      .video-info {
+        flex-grow: 1;
+      }
+
+      .video-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 15px;
+        text-align: left;
+      }
+
+      .video-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .view-details,
+      .delete-video {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+      }
+
+      .view-details {
+        background-color: #3498db;
+        color: #fff;
+      }
+
+      .view-details:hover {
+        background-color: #2980b9;
+      }
+
+      .delete-video {
+        background-color: #e74c3c;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+
+      .delete-video:hover {
+        background-color: #c0392b;
+      }
+
+      .pagination {
+        text-align: center;
+        margin-top: 30px;
+      }
+
+      .pagination a {
+        color: #3498db;
+        padding: 10px 18px;
+        text-decoration: none;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin: 0 8px;
+        font-size: 0.9rem;
+      }
+
+      .pagination a:hover {
+        background-color: #f0f0f0;
+      }
+
+      #load-more-btn,
+      #transcribe-remaining-btn {
+        display: inline-block;
+        margin: 40px auto 0;
+        padding: 12px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        background-color: #3498db;
+        color: #fff;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        text-align: center;
+        border: none;
+      }
+
+      #load-more-btn:hover,
+      #transcribe-remaining-btn:hover {
+        background-color: #2980b9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Latest Videos from the Channel</h1>
+
+    <div class="video-grid" id="video-grid">
+      {% for video in videos %}
+      <div class="video-card" id="video-{{ video.videoId }}">
+        <img
+          src="{{ video.thumbnail }}"
+          alt="Thumbnail"
+          class="video-thumbnail"
+        />
+        <div class="video-info">
+          <div class="video-title">{{ video.title }}</div>
+          <div class="video-actions">
+            <a href="/video_details/{{ video.videoId }}" class="view-details"
+              >Transcript</a
+            >
+            <button
+              class="delete-video"
+              onclick="deleteVideo('{{ video.videoId }}')"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="pagination">
+      <button id="load-more-btn" onclick="loadMoreVideos()">Load More</button>
+    </div>
+    <center>
+      <button
+        class="btn btn-primary"
+        id="transcribe-remaining-btn"
+        onclick="if(confirm('Are you sure you want to transcribe all remaining videos?')) transcribeAll();"
+      >
+        Transcribe All
+      </button>
+    </center>
+    <iframe
+      src="https://chatbot-2-ttou.onrender.com"
+      style="
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 400px;
+        height: 600px;
+        border: none;
+        z-index: 1000;
+      "
+    >
+    </iframe>
+
+    <script>
+      let nextPageToken = "{{ next_page_token }}";
+      const channelId = "{{ channel_id }}";
+
+      function loadMoreVideos() {
+        if (!nextPageToken) {
+          return;
+        }
+
+        fetch(
+          `/get_videos?channel_id=${channelId}&page_token=${nextPageToken}`,
+          {
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          }
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            const videoGrid = document.getElementById("video-grid");
+
+            // Append new videos to the grid
+            data.videos.forEach((video) => {
+              const videoCard = document.createElement("div");
+              videoCard.classList.add("video-card");
+              videoCard.id = `video-${video.videoId}`;
+              videoCard.innerHTML = `
+          <img src="${video.thumbnail}" alt="Thumbnail" class="video-thumbnail">
+          <div class="video-info">
+            <div class="video-title">${video.title}</div>
+            <div class="video-actions">
+              <a href="/video_details/${video.videoId}" class="view-details">Transcript</a>
+              <button class="delete-video" onclick="deleteVideo('${video.videoId}')">Delete</button>
+            </div>
+          </div>
+        `;
+              videoGrid.appendChild(videoCard);
+            });
+
+            // Update nextPageToken for the next set of videos
+            nextPageToken = data.next_page_token;
+
+            // If there are no more videos to load, hide the Load More button
+            if (!nextPageToken) {
+              document.getElementById("load-more-btn").style.display = "none";
+            }
+          })
+          .catch((error) => console.error("Error loading more videos:", error));
+      }
+
+      let deletedVideos = []; // Track deleted video IDs
+
+      function deleteVideo(videoId) {
+        fetch("/delete_video", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ video_id: videoId }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              let videoElement = document.getElementById(`video-${videoId}`);
+              videoElement.remove(); // Remove video from the DOM
+              deletedVideos.push(videoId); // Track deleted video
+            }
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+
+      function transcribeAll() {
+        const channelId = "{{ channel_id }}"; // Ensure this is correctly passed from Flask to the template
+
+        // Gather the IDs of videos that are still on the page (not deleted)
+        let remainingVideoIds = [];
+        document.querySelectorAll(".video-card").forEach((card) => {
+          const videoId = card.id.replace("video-", "");
+          if (!deletedVideos.includes(videoId)) {
+            remainingVideoIds.push(videoId);
+          }
+        });
+
+        // Send the list of remaining video IDs to the server
+        fetch("/transcribe_remaining", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            video_ids: remainingVideoIds,
+            channel_id: channelId,
+          }),
+        })
+          .then((response) => response.text())
+          .then((data) => {
+            document.body.innerHTML = data; // Replace page content with the result
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+    </script>
+  </body>
+</html>

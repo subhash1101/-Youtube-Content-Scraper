@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Videos</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      /* Global styles */
+      body {
+        font-family: "Roboto", Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f9fafb;
+        color: #444;
+      }
+
+      h1 {
+        text-align: center;
+        color: #222;
+        margin-bottom: 40px;
+        font-weight: 500;
+      }
+
+      /* Video container */
+      .video-container {
+        position: relative; /* Enable absolute positioning within the container */
+        display: flex;
+        flex-direction: row;
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .upload-button {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid #007bff;
+        background-color: #007bff;
+        color: #fff;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        font-size: 16px;
+        align-self: flex-start;
+        margin-top: 10px;
+      }
+
+      .upload-button:hover {
+        background-color: #0056b3;
+      }
+
+      .video-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .video-player {
+        flex-shrink: 0;
+        width: 400px;
+        height: 300px;
+        border-radius: 6px;
+        margin-right: 20px;
+      }
+
+      .video-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .video-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      /* Tab container */
+      .tab-container {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 15px;
+      }
+
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        background-color: #f5f5f5;
+        color: #555;
+        border-radius: 30px;
+        margin-right: 10px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      .tab.active {
+        background-color: #007bff;
+        color: #fff;
+      }
+
+      .tab:hover {
+        background-color: #007bff;
+        color: #fff;
+      }
+
+      /* Tab content */
+      .tab-content {
+        display: none;
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 5px;
+        border: 1px solid #eee;
+        max-height: 250px;
+        overflow-y: auto;
+        margin-top: 10px;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .tab-content h3 {
+        margin-top: 0;
+      }
+
+      /* Button */
+      .copy-button {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid #007bff;
+        background-color: #007bff;
+        color: #fff;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        font-size: 16px;
+        align-self: flex-start;
+        margin-top: 10px;
+      }
+
+      .copy-button:hover {
+        background-color: #0056b3;
+      }
+
+      /* Translation dropdown */
+      select {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        background-color: #fff;
+      }
+
+      /* Global loading spinner */
+      .global-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .global-loader .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      body.loaded .global-loader {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Latest Videos</h1>
+    <div id="videos">
+      {% for video in videos %}
+      <div class="video-container">
+        <iframe
+          class="video-player"
+          src="https://www.youtube.com/embed/{{ video.videoId }}"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+
+        <div class="video-details">
+          <h2 class="video-title">{{ video.title }}</h2>
+          <div class="tab-container">
+            <div
+              class="tab active"
+              onclick="showTab('{{ video.videoId }}', 'transcript')"
+            >
+              Transcript
+            </div>
+            <div
+              class="tab"
+              onclick="showTab('{{ video.videoId }}', 'translation')"
+            >
+              Translate
+            </div>
+            <div
+              class="tab"
+              onclick="showTab('{{ video.videoId }}', 'summary')"
+            >
+              Summarize
+            </div>
+          </div>
+
+          <button
+            onclick="copyTranscript('{{ video.videoId }}')"
+            class="copy-button"
+          >
+            Copy Text
+          </button>
+
+          <div
+            id="transcript-{{ video.videoId }}"
+            class="tab-content active"
+            data-fetched="true"
+          >
+            {{ video.transcription|safe }}
+          </div>
+
+          <div id="translation-{{ video.videoId }}" class="tab-content">
+            <select
+              id="language-select-{{ video.videoId }}"
+              onchange="fetchTranslation('{{ video.videoId }}')"
+            >
+              <option value="">Select Language</option>
+              <option value="hi">Hindi</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="zh-CN">Chinese (Simplified)</option>
+            </select>
+            <div id="translation-content-{{ video.videoId }}"></div>
+          </div>
+
+          <div id="summary-{{ video.videoId }}" class="tab-content">
+            {{ video.summary|safe }}
+          </div>
+          <button
+            class="upload-button"
+            onclick="uploadVideo('{{ video.videoId }}')"
+          >
+            Upload
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <iframe
+      src="https://chatbot-2-ttou.onrender.com"
+      style="
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 400px;
+        height: 600px;
+        border: none;
+        z-index: 1000;
+      "
+    >
+    </iframe>
+
+    <script>
+      function uploadVideo(videoId) {
+        const transcription = $(`#transcript-${videoId}`).text();
+        const summary = $(`#summary-${videoId}`).text();
+
+        $.post(
+          "/upload_to_s3",
+          {
+            video_id: videoId,
+            transcription: transcription,
+            summary: summary,
+          },
+          function (response) {
+            if (response.status === "success") {
+              alert("Successfully uploaded transcription and summary to S3.");
+            } else {
+              alert("Failed to upload transcription and summary.");
+            }
+          }
+        );
+      }
+
+      function copyTranscript(videoId) {
+        const transcriptContent = $(`#transcript-${videoId}`).text();
+        const tempTextarea = document.createElement("textarea");
+        tempTextarea.value = transcriptContent;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempTextarea);
+        alert("Transcript copied to clipboard!");
+      }
+
+      function showTab(videoId, tabName) {
+        $(`
+          #transcript-${videoId}, 
+          #translation-${videoId}, 
+          #summary-${videoId}
+        `)
+          .removeClass("active")
+          .hide();
+        $(`#transcript-${videoId}`)
+          .siblings(".tab-container")
+          .find(".tab")
+          .removeClass("active");
+        const tabIndex =
+          tabName === "transcript" ? 1 : tabName === "translation" ? 2 : 3;
+        $(`.tab-container .tab:nth-child(${tabIndex})`).addClass("active");
+        $(`#${tabName}-${videoId}`).addClass("active").show();
+      }
+
+      function fetchTranslation(videoId) {
+        const targetLanguage = $(`#language-select-${videoId}`).val();
+        $(`#translation-content-${videoId}`).html(
+          targetLanguage
+            ? '<div class="spinner"></div><span class="loading-text">Loading translation...</span>'
+            : ""
+        );
+        if (targetLanguage) {
+          $.ajax({
+            url: `/translate/${videoId}`,
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ target_language: targetLanguage }),
+            success: (response) => {
+              const content = response.transcription
+                ? `<strong>Translation (${getLanguageName(
+                    targetLanguage
+                  )}):</strong><br>${response.transcription}`
+                : `<span style="color: red;">${
+                    response.error || "Failed to fetch translation122."
+                  }</span>`;
+              $(`#translation-content-${videoId}`).html(content);
+            },
+            error: () => {
+              $(`#translation-content-${videoId}`).html(
+                '<span style="color: red;">Failed to fetch translation123.</span>'
+              );
+            },
+          });
+        }
+      }
+      function getLanguageName(code) {
+        return (
+          {
+            hi: "Hindi",
+            es: "Spanish",
+            fr: "French",
+            de: "German",
+            "zh-CN": "Chinese (Simplified)",
+          }[code] || code
+        );
+      }
+    </script>
+  </body>
+</html>

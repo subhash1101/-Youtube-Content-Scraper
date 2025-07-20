@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Channel Videos</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+      /* Basic styles for the form */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      form {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      label,
+      input,
+      button {
+        display: block;
+        width: 100%;
+        margin-bottom: 15px;
+        font-size: 16px;
+      }
+      input[type="text"] {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 18px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      /* Spinner for loading animation */
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .loading-text {
+        display: inline-block;
+        margin-left: 10px;
+        font-size: 14px;
+        color: #666;
+      }
+
+      /* Center loading area */
+      #loading-container {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      /* Estimation area */
+      .estimated-time {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Get Latest 10 Videos from a YouTube Channel</h1>
+    <form id="videoForm" action="/get_videos" method="POST">
+      <label for="channel_url">Enter YouTube Channel URL:</label>
+      <input
+        type="text"
+        id="channel_url"
+        name="channel_url"
+        placeholder="Enter URL"
+        required
+      />
+      <button type="submit">Get Videos</button>
+    </form>
+    <br /><br />
+    <h1>Get Web Scraper</h1>
+    <form action="/crawl_website" method="POST">
+      <label>Enter Website URL:</label>
+      <input type="text" name="url" placeholder="Enter URL" required />
+      <button type="submit">Crawl Website</button>
+    </form>
+
+    <!-- Loading Spinner and Estimation Text -->
+    <div id="loading-container">
+      <div class="spinner"></div>
+      <span class="loading-text">Fetching videos... Please wait.</span>
+      <div class="estimated-time">Estimated time: 5-10 seconds</div>
+    </div>
+    <iframe
+      src="https://chatbot-2-ttou.onrender.com"
+      style="
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 400px;
+        height: 600px;
+        border: none;
+        z-index: 1000;
+      "
+    >
+    </iframe>
+
+    <script>
+      $(document).ready(function () {
+        // Attach a submit event to the form
+        $("#videoForm").submit(function (e) {
+          e.preventDefault(); // Prevent form submission
+
+          // Show the loading container with spinner and text
+          $("#loading-container").show();
+
+          // Optionally: Simulate a delay for loading (can be adjusted)
+          setTimeout(function () {
+            // After 5 seconds (simulated), hide the loading spinner
+            $("#loading-container").hide();
+            // Now submit the form normally after simulation
+            $("#videoForm")[0].submit();
+          }, 5000); // Simulate 5-second load (you can adjust this as needed)
+        });
+      });
+    </script>
+  </body>
+</html>
